@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tag-based Note Viewer</title>
+    <link rel="stylesheet" type="text/css" href="displayNotes1style.css">
+    <script src="../config.js"></script>
+</head>
+<body>
+    <a href="directory.html">..directory</a><hr>
+    
+    <div class="container">
+        <div id="iframeContainer" style="display: none;">
+            <iframe id="noteEditIframe" src="" style="width: 90%; height: 90%;"></iframe>
+            <button id="closeIframeBtn" style="position: absolute; top: 10px; right: 10px;">Close</button>
+        </div>
+        
+        <div id="tagsPanel" class="tags-panel">
+            <div id="tagsPanelHeader" class="tags-panel-header">Click tags to select notes (AND)</div>
+            <div id="tagsPanelContent" class="tags-panel-content"></div>
+        </div>
+        <div id="notesPanel" class="notes-panel"></div>
+    </div>
+    <script src="displayNotes1Script.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert Questions</title>
+    <link rel="stylesheet" href="Qraw2mongoDataStyle.css"> <!-- Link to your CSS file -->
+    <script src="../config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="panel left-panel">
+            <div class = "panel-button-group">
+                <button id="prev">Prev</button>
+                <button id="next">Next</button>
+                <button id="populate">Populate</button>                
+            </div>
+            <div id="oldQuestionDisplay"></div>
+        </div>
+        <div class="panel right-panel">
+            <form id="questionForm">
+                <!-- Dynamic form fields will go here -->
+            </form>
+            <button id="submit">Submit</button>
+        </div>
+    </div>
+
+    <script src="Qraw2mongoData.js"></script> <!-- Link to your data file -->
+    <script src="Qraw2mongo.js"></script> <!-- Link to your JavaScript file -->
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Note Editor</title>
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <script src="../config.js"></script>
+</head>
+<body>
+    <h1>Note Editor</h1>
+    <div id="noteIdDisplay">Loading...</div>
+
+    <input type="text" id="title" placeholder="Title">
+    <textarea id="content"></textarea>
+    <input type="text" id="tags" placeholder="Tags (comma-separated)">
+    <button id="saveButton">Save Note</button>
+
+
+
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script>
+        function getNoteIdFromUrl() {
+            const queryParams = new URLSearchParams(window.location.search);
+            return queryParams.get('noteId');
+        }
+
+        async function loadNoteForEditing(noteId) {
+            try {
+                const noteResponse = await fetch(`${API_BASE_URL}/api/notes/noteById/${noteId}`);
+                const note = await noteResponse.json();
+                
+                document.getElementById('title').value = note.title;
+                if (easymde) {
+                    easymde.value(note.content);
+
+                    //two ways to move page up to the editor
+                    //easymde.codemirror.focus(); 
+                    
+                    // Scroll to the EasyMDE editor
+                    window.scrollTo({
+                        top: easymde.element.offsetTop, // Adjust this as needed
+                        behavior: 'smooth' // Optional: for smooth scrolling
+                    });
+                } else {
+                    console.error('EasyMDE editor instance is not available.');
+                }
+
+                if (note.tags) {
+                    document.getElementById('tags').value = note.tags.map(tag => tag.name).join(', '); // Join tag names
+                } else {
+                    document.getElementById('tags').value = '';
+                }
+                // // Extract tag IDs and join them into a comma-separated string
+                // const tagIds = note.tags.map(tag => tag._id).join(',');
+
+                // if (tagIds) {
+                //     const tagNamesResponse = await fetch(`${API_BASE_URL}/api/tags/ids2names?tagIds=${tagIds}`);
+                //     const tagNames = await tagNamesResponse.json();
+                //     document.getElementById('tags').value = tagNames;
+                // } else {
+                //     document.getElementById('tags').value = '';
+                // }
+
+                editingNoteId = noteId; // Store the editing note's ID
+            } catch (error) {
+                console.error('Error fetching note for editing:', error);
+            }
+        }
+
+        function setUpSaveButtonListener() {
+            document.getElementById('saveButton').addEventListener('click', async (event) => {
+                event.preventDefault();
+                const title = document.getElementById('title').value;
+                const content = easymde.value();
+                let tagsInput = document.getElementById('tags').value;
+                let tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()) : [];
+
+                try {
+                    let response, data;
+                    if (editingNoteId) {
+                        // Edit operation
+                        response = await fetch(`${API_BASE_URL}/api/notes/${editingNoteId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title, content, tags }),
+                        });
+                        data = await response.json();
+                        console.log('Note updated:', data);
+                        // Consider redirecting the user or closing the iframe after successful update
+                    } else {
+                        console.error("No note is being edited.");
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            easymde = new EasyMDE({ element: document.getElementById("content") });
+            
+            const noteId = getNoteIdFromUrl();
+            if (noteId) {
+                await loadNoteForEditing(noteId);
+            };
+
+            setUpSaveButtonListener();
+        });
+
+    </script>
+</body>
+</html>

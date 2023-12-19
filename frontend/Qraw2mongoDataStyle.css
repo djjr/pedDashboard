@@ -1,0 +1,59 @@
+.container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.panel {
+    width: 45%;
+    padding: 20px;
+    border: 1px solid #ddd;
+}
+
+.left-panel button {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.panel label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.panel input[type="text"],
+.panel select,
+.panel textarea {
+    width: 100%;
+    box-sizing: border-box; /* To include padding and border in the element's width */
+}
+
+.panel #questionType,
+.panel #difficulty {
+    width: auto;
+    display: inline-block; /* To place type and difficulty on the same line */
+    margin-right: 10px;
+}
+
+.panel textarea {
+    height: 100px; /* Adjust as needed */
+}
+
+.dropdown-group {
+    display: flex;
+    justify-content: start;
+    gap: 20px; /* Adds space between the two dropdowns */
+}
+
+.dropdown-group label {
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-group select {
+    margin-left: 5px; /* Adds a small space between label text and select dropdown */
+}
+
+.panel-button-group {
+    display: flex;
+    justify-content: start;
+    gap: 20px; /* Adds space between the two buttons */
+}
