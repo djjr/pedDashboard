@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flip Book Fun!</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: linear-gradient(135deg, #FFF9F0 0%, #F0F8FF 100%);
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 10px 40px;
+    }
+
+    h1 {
+      font-size: 2.6em;
+      color: #FF6B6B;
+      text-shadow: 3px 3px 0 #FFD93D, 5px 5px 0 rgba(0,0,0,0.1);
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      color: #6C5CE7;
+      font-size: 1.05em;
+      margin-bottom: 22px;
+      opacity: 0.85;
+    }
+
+    /* ── Book container ── */
+    .flipbook {
+      position: relative;
+      width: 320px;
+      border-radius: 14px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25), 4px 4px 0 #333;
+      overflow: hidden;
+      background: white;
+      border: 4px solid #333;
+    }
+
+    /* Spine effect on left edge */
+    .flipbook::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 12px;
+      background: repeating-linear-gradient(
+        to bottom,
+        #E8D5B7 0px, #E8D5B7 8px,
+        #D4B896 8px, #D4B896 16px
+      );
+      z-index: 20;
+      border-right: 2px solid #B8956A;
+    }
+
+    /* ── Each flip section ── */
+    .section {
+      position: relative;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 3px dashed #AAA;
+      overflow: hidden;
+    }
+
+    .section:last-child { border-bottom: none; }
+
+    .section-inner {
+      width: 300px;
+      height: 200px;
+      position: relative;
+      will-change: transform;
+    }
+
+    .section-inner.flipping {
+      animation: pageTurn 0.35s ease-in-out;
+    }
+
+    @keyframes pageTurn {
+      0%   { transform: perspective(500px) rotateX(0deg);   opacity: 1; }
+      45%  { transform: perspective(500px) rotateX(90deg);  opacity: 0.3; }
+      55%  { transform: perspective(500px) rotateX(-90deg); opacity: 0.3; }
+      100% { transform: perspective(500px) rotateX(0deg);   opacity: 1; }
+    }
+
+    /* ── Nav arrows ── */
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.92);
+      border: 2.5px solid #444;
+      border-radius: 50%;
+      width: 36px; height: 36px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+      transition: background 0.15s, transform 0.1s;
+      user-select: none;
+      line-height: 1;
+    }
+    .nav-btn:hover  { background: #FFD93D; transform: translateY(-50%) scale(1.12); }
+    .nav-btn:active { transform: translateY(-50%) scale(0.93); }
+    .nav-btn.prev   { left: 16px; }
+    .nav-btn.next   { right: 8px; }
+
+    /* ── Labels & counters ── */
+    .section-label {
+      position: absolute;
+      top: 6px; right: 12px;
+      background: rgba(0,0,0,0.55);
+      color: white;
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 2px 9px;
+      border-radius: 10px;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .counter {
+      position: absolute;
+      bottom: 5px; right: 12px;
+      font-size: 10px;
+      color: rgba(0,0,0,0.35);
+      pointer-events: none;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 11px 22px;
+      border: 3px solid #333;
+      border-radius: 10px;
+      font-size: 1em;
+      font-family: inherit;
+      cursor: pointer;
+      font-weight: bold;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 3px 3px 0 #333;
+    }
+    .btn:hover  { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #333; }
+    .btn:active { transform: translate(2px, 2px);  box-shadow: 1px 1px 0 #333; }
+    .btn-random { background: #FFD93D; }
+    .btn-name   { background: #A8EDEA; }
+
+    .name-display {
+      margin-top: 16px;
+      font-size: 1.35em;
+      color: #6C5CE7;
+      font-weight: bold;
+      min-height: 1.8em;
+      text-align: center;
+      text-shadow: 1px 1px 0 rgba(108,92,231,0.2);
+      transition: opacity 0.3s;
+    }
+
+    /* ── Keyboard hint ── */
+    .hint {
+      margin-top: 18px;
+      font-size: 0.78em;
+      color: #999;
+      text-align: center;
+      line-height: 1.8;
+    }
+    .key {
+      display: inline-block;
+      background: #eee;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: monospace;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🎭 Flip Book Fun!</h1>
+<p class="subtitle">Mix &amp; match heads, bodies &amp; feet to create silly creatures!</p>
+
+<div class="flipbook">
+  <!-- HEAD -->
+  <div class="section">
+    <button class="nav-btn prev" onclick="flip('head',-1)" title="Previous head">&#9664;</button>
+    <span class="section-label">HEAD</span>
+    <div class="section-inner" id="head-inner"></div>
+    <span class="counter" id="head-counter"></span>
+    <button class="nav-btn next" onclick="flip('head', 1)" title="Next head">&#9654;</button>
+  </div>
+
+  <!-- BODY -->
+  <div class="section">
+    <button class="nav-btn prev" onclick="flip('body',-1)" title="Previous body">&#9664;</button>
+    <span class="section-label">BODY</span>
+    <div class="section-inner" id="body-inner"></div>
+    <span class="counter" id="body-counter"></span>
+    <button class="nav-btn next" onclick="flip('body', 1)" title="Next body">&#9654;</button>
+  </div>
+
+  <!-- FEET -->
+  <div class="section">
+    <button class="nav-btn prev" onclick="flip('feet',-1)" title="Previous feet">&#9664;</button>
+    <span class="section-label">FEET</span>
+    <div class="section-inner" id="feet-inner"></div>
+    <span class="counter" id="feet-counter"></span>
+    <button class="nav-btn next" onclick="flip('feet', 1)" title="Next feet">&#9654;</button>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn btn-random" onclick="randomize()">🎲 Randomize!</button>
+  <button class="btn btn-name"   onclick="showName()">📛 Name This Creature!</button>
+</div>
+
+<div class="name-display" id="name-display"></div>
+
+<p class="hint">
+  Keyboard: <span class="key">Q</span>/<span class="key">E</span> head &nbsp;
+  <span class="key">A</span>/<span class="key">D</span> body &nbsp;
+  <span class="key">Z</span>/<span class="key">C</span> feet &nbsp;
+  <span class="key">R</span> random &nbsp;
+  <span class="key">N</span> name
+</p>
+
+<script>
+// =============================================================================
+// SVG HELPERS
+// =============================================================================
+function svg(bg, content) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="300" height="200">
+    <rect width="300" height="200" fill="${bg}"/>
+    ${content}
+  </svg>`;
+}
+
+// =============================================================================
+// HEADS  (6 characters)
+// =============================================================================
+const heads = [
+
+  // 0 ── CAT (orange)
+  svg('#FFF0E6', `
+    <rect x="122" y="168" width="56" height="36" rx="6" fill="#FF8C42"/>
+    <ellipse cx="150" cy="108" rx="78" ry="74" fill="#FF8C42"/>
+    <polygon points="72,62 90,16 122,60" fill="#FF8C42"/>
+    <polygon points="83,57 97,26 116,57" fill="#FFAABB"/>
+    <polygon points="178,60 210,16 228,62" fill="#FF8C42"/>
+    <polygon points="184,57 204,26 217,57" fill="#FFAABB"/>
+    <ellipse cx="118" cy="104" rx="21" ry="23" fill="white"/>
+    <ellipse cx="182" cy="104" rx="21" ry="23" fill="white"/>
+    <ellipse cx="119" cy="107" rx="12" ry="16" fill="#2C3E50"/>
+    <ellipse cx="183" cy="107" rx="12" ry="16" fill="#2C3E50"/>
+    <circle cx="114" cy="101" r="4" fill="white"/>
+    <circle cx="178" cy="101" r="4" fill="white"/>
+    <polygon points="150,127 143,136 157,136" fill="#FF69B4"/>
+    <path d="M143,136 Q150,145 157,136" stroke="#444" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <line x1="80" y1="130" x2="136" y2="136" stroke="#888" stroke-width="1.5"/>
+    <line x1="80" y1="139" x2="136" y2="139" stroke="#888" stroke-width="1.5"/>
+    <line x1="84" y1="148" x2="136" y2="143" stroke="#888" stroke-width="1.5"/>
+    <line x1="220" y1="130" x2="164" y2="136" stroke="#888" stroke-width="1.5"/>
+    <line x1="220" y1="139" x2="164" y2="139" stroke="#888" stroke-width="1.5"/>
+    <line x1="216" y1="148" x2="164" y2="143" stroke="#888" stroke-width="1.5"/>
+    <ellipse cx="150" cy="108" rx="78" ry="74" fill="none" stroke="#333" stroke-width="2.5"/>
+    <polygon points="72,62 90,16 122,60" fill="none" stroke="#333" stroke-width="2.5"/>
+    <polygon points="178,60 210,16 228,62" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+
+  // 1 ── DOG (brown)
+  svg('#FFF5E8', `
+    <rect x="118" y="168" width="64" height="36" rx="6" fill="#C68B59"/>
+    <ellipse cx="150" cy="100" rx="80" ry="76" fill="#C68B59"/>
+    <ellipse cx="74" cy="105" rx="29" ry="52" fill="#A0694A" transform="rotate(-12,74,105)"/>
+    <ellipse cx="226" cy="105" rx="29" ry="52" fill="#A0694A" transform="rotate(12,226,105)"/>
+    <ellipse cx="150" cy="72" rx="42" ry="26" fill="#A0694A"/>
+    <circle cx="120" cy="98" r="21" fill="white"/>
+    <circle cx="180" cy="98" r="21" fill="white"/>
+    <circle cx="122" cy="100" r="12" fill="#3D2B1F"/>
+    <circle cx="182" cy="100" r="12" fill="#3D2B1F"/>
+    <circle cx="117" cy="95" r="4" fill="white"/>
+    <circle cx="177" cy="95" r="4" fill="white"/>
+    <ellipse cx="150" cy="136" rx="38" ry="27" fill="#D4A574"/>
+    <ellipse cx="150" cy="124" rx="16" ry="11" fill="#2C1810"/>
+    <circle cx="143" cy="126" r="4" fill="#1a0f0a"/>
+    <circle cx="157" cy="126" r="4" fill="#1a0f0a"/>
+    <ellipse cx="150" cy="154" rx="18" ry="13" fill="#FF6B8A"/>
+    <line x1="150" y1="144" x2="150" y2="164" stroke="#D45070" stroke-width="2"/>
+    <path d="M118,144 Q150,149 182,144" stroke="#444" stroke-width="2" fill="none"/>
+    <ellipse cx="150" cy="100" rx="80" ry="76" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+
+  // 2 ── ALIEN (green)
+  svg('#F0FFF2', `
+    <rect x="126" y="170" width="48" height="34" rx="6" fill="#7BC47E"/>
+    <ellipse cx="150" cy="108" rx="83" ry="88" fill="#7BC47E"/>
+    <line x1="110" y1="22" x2="127" y2="58" stroke="#5AA860" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="108" cy="18" r="9" fill="#FFD700" stroke="#333" stroke-width="2"/>
+    <line x1="190" y1="22" x2="173" y2="58" stroke="#5AA860" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="192" cy="18" r="9" fill="#FFD700" stroke="#333" stroke-width="2"/>
+    <ellipse cx="116" cy="96" rx="33" ry="36" fill="#1A1A2E"/>
+    <ellipse cx="184" cy="96" rx="33" ry="36" fill="#1A1A2E"/>
+    <ellipse cx="111" cy="88" rx="13" ry="15" fill="#4FC3F7" opacity="0.85"/>
+    <ellipse cx="179" cy="88" rx="13" ry="15" fill="#4FC3F7" opacity="0.85"/>
+    <circle cx="107" cy="84" r="5" fill="white" opacity="0.9"/>
+    <circle cx="175" cy="84" r="5" fill="white" opacity="0.9"/>
+    <path d="M120,152 Q150,166 180,152" stroke="#2D6B2F" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <circle cx="142" cy="138" r="5" fill="#5AA860"/>
+    <circle cx="158" cy="138" r="5" fill="#5AA860"/>
+    <ellipse cx="150" cy="108" rx="83" ry="88" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+
+  // 3 ── ROBOT (silver)
+  svg('#EEF2F5', `
+    <rect x="122" y="162" width="18" height="42" rx="4" fill="#7F8C8D"/>
+    <rect x="160" y="162" width="18" height="42" rx="4" fill="#7F8C8D"/>
+    <rect x="128" y="168" width="44" height="36" rx="4" fill="#95A5A6"/>
+    <rect x="42" y="26" width="216" height="158" rx="18" fill="#BDC3C7"/>
+    <rect x="32" y="62" width="18" height="76" rx="8" fill="#95A5A6" stroke="#7F8C8D" stroke-width="1.5"/>
+    <rect x="250" y="62" width="18" height="76" rx="8" fill="#95A5A6" stroke="#7F8C8D" stroke-width="1.5"/>
+    <rect x="80" y="16" width="140" height="18" rx="6" fill="#95A5A6"/>
+    <rect x="146" y="2" width="8" height="18" rx="3" fill="#7F8C8D"/>
+    <circle cx="150" cy="1" r="7" fill="#E74C3C"/>
+    <rect x="65" y="64" width="68" height="56" rx="10" fill="#1ABC9C"/>
+    <rect x="167" y="64" width="68" height="56" rx="10" fill="#1ABC9C"/>
+    <line x1="77" y1="92" x2="121" y2="92" stroke="white" stroke-width="3.5"/>
+    <line x1="99" y1="70" x2="99" y2="114" stroke="white" stroke-width="3.5"/>
+    <line x1="179" y1="92" x2="223" y2="92" stroke="white" stroke-width="3.5"/>
+    <line x1="201" y1="70" x2="201" y2="114" stroke="white" stroke-width="3.5"/>
+    <rect x="82" y="140" width="136" height="28" rx="8" fill="#7F8C8D"/>
+    <line x1="92" y1="148" x2="208" y2="148" stroke="#95A5A6" stroke-width="2"/>
+    <line x1="92" y1="154" x2="208" y2="154" stroke="#95A5A6" stroke-width="2"/>
+    <line x1="92" y1="160" x2="208" y2="160" stroke="#95A5A6" stroke-width="2"/>
+    <circle cx="55" cy="41" r="7" fill="#95A5A6" stroke="#7F8C8D" stroke-width="2"/>
+    <circle cx="245" cy="41" r="7" fill="#95A5A6" stroke="#7F8C8D" stroke-width="2"/>
+    <rect x="42" y="26" width="216" height="158" rx="18" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+
+  // 4 ── FROG (bright green)
+  svg('#F0FFF0', `
+    <rect x="122" y="172" width="56" height="32" rx="6" fill="#4CAF50"/>
+    <ellipse cx="150" cy="122" rx="88" ry="72" fill="#4CAF50"/>
+    <ellipse cx="150" cy="78" rx="74" ry="38" fill="#4CAF50"/>
+    <ellipse cx="107" cy="62" rx="28" ry="25" fill="#4CAF50"/>
+    <ellipse cx="193" cy="62" rx="28" ry="25" fill="#4CAF50"/>
+    <ellipse cx="107" cy="60" rx="22" ry="20" fill="#FFFDE7"/>
+    <ellipse cx="193" cy="60" rx="22" ry="20" fill="#FFFDE7"/>
+    <ellipse cx="109" cy="62" rx="13" ry="14" fill="#1B5E20"/>
+    <ellipse cx="195" cy="62" rx="13" ry="14" fill="#1B5E20"/>
+    <circle cx="105" cy="56" r="5" fill="white"/>
+    <circle cx="191" cy="56" r="5" fill="white"/>
+    <path d="M62,132 Q150,178 238,132" fill="#388E3C" stroke="#333" stroke-width="2.5"/>
+    <rect x="110" y="142" width="14" height="12" rx="3" fill="white"/>
+    <rect x="136" y="144" width="14" height="10" rx="3" fill="white"/>
+    <rect x="162" y="142" width="14" height="12" rx="3" fill="white"/>
+    <ellipse cx="150" cy="152" rx="52" ry="28" fill="#81C784" opacity="0.45"/>
+    <circle cx="137" cy="116" r="4.5" fill="#388E3C"/>
+    <circle cx="163" cy="116" r="4.5" fill="#388E3C"/>
+    <ellipse cx="150" cy="122" rx="88" ry="72" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="150" cy="78" rx="74" ry="38" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+
+  // 5 ── MONSTER (red)
+  svg('#FFF0F0', `
+    <rect x="112" y="166" width="76" height="38" rx="6" fill="#E74C3C"/>
+    <ellipse cx="150" cy="104" rx="88" ry="84" fill="#E74C3C"/>
+    <polygon points="88,34 76,0 108,30" fill="#C0392B"/>
+    <polygon points="212,34 224,0 192,30" fill="#C0392B"/>
+    <polygon points="88,34 76,0 108,30" fill="none" stroke="#333" stroke-width="2"/>
+    <polygon points="212,34 224,0 192,30" fill="none" stroke="#333" stroke-width="2"/>
+    <ellipse cx="150" cy="88" rx="46" ry="46" fill="#FFEB3B"/>
+    <ellipse cx="150" cy="90" rx="29" ry="31" fill="#1A237E"/>
+    <circle cx="137" cy="80" r="11" fill="white" opacity="0.8"/>
+    <circle cx="86" cy="112" r="19" fill="white"/>
+    <circle cx="89" cy="114" r="11" fill="#8B0000"/>
+    <circle cx="84" cy="109" r="4" fill="white"/>
+    <circle cx="214" cy="112" r="19" fill="white"/>
+    <circle cx="211" cy="114" r="11" fill="#8B0000"/>
+    <circle cx="210" cy="109" r="4" fill="white"/>
+    <path d="M72,150 Q150,178 228,150 Q218,168 203,160 Q188,172 173,160 Q159,172 150,160 Q141,172 127,160 Q112,172 97,160 Q82,168 72,150 Z" fill="#C0392B" stroke="#333" stroke-width="2"/>
+    <polygon points="104,162 111,182 118,162" fill="white"/>
+    <polygon points="134,162 141,184 148,162" fill="white"/>
+    <polygon points="152,162 159,184 166,162" fill="white"/>
+    <polygon points="182,162 189,182 196,162" fill="white"/>
+    <ellipse cx="150" cy="104" rx="88" ry="84" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+];
+
+// =============================================================================
+// BODIES  (6 characters)
+// =============================================================================
+const bodies = [
+
+  // 0 ── CAT body
+  svg('#FFF5EE', `
+    <ellipse cx="150" cy="100" rx="74" ry="84" fill="#FF8C42"/>
+    <ellipse cx="150" cy="112" rx="46" ry="60" fill="#FFE0CC"/>
+    <ellipse cx="104" cy="176" rx="30" ry="18" fill="#FF8C42"/>
+    <ellipse cx="196" cy="176" rx="30" ry="18" fill="#FF8C42"/>
+    <circle cx="88" cy="180" r="8" fill="#FF9A5C"/>
+    <circle cx="104" cy="185" r="8" fill="#FF9A5C"/>
+    <circle cx="120" cy="180" r="8" fill="#FF9A5C"/>
+    <circle cx="180" cy="180" r="8" fill="#FF9A5C"/>
+    <circle cx="196" cy="185" r="8" fill="#FF9A5C"/>
+    <circle cx="212" cy="180" r="8" fill="#FF9A5C"/>
+    <path d="M220,78 Q268,38 255,10 Q240,-8 226,16 Q240,32 230,58 Q224,76 218,83" fill="#FF8C42" stroke="#333" stroke-width="2"/>
+    <path d="M95,54 Q106,49 117,54" stroke="#CC6B28" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M92,68 Q105,63 118,68" stroke="#CC6B28" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="150" cy="100" rx="74" ry="84" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="104" cy="176" rx="30" ry="18" fill="none" stroke="#333" stroke-width="2"/>
+    <ellipse cx="196" cy="176" rx="30" ry="18" fill="none" stroke="#333" stroke-width="2"/>
+  `),
+
+  // 1 ── DOG body
+  svg('#FFF5E8', `
+    <ellipse cx="150" cy="100" rx="78" ry="86" fill="#C68B59"/>
+    <ellipse cx="150" cy="115" rx="50" ry="64" fill="#D4A574"/>
+    <rect x="100" y="10" width="100" height="22" rx="8" fill="#E74C3C"/>
+    <rect x="138" y="13" width="24" height="18" rx="4" fill="#F39C12"/>
+    <circle cx="150" cy="32" r="8" fill="#F39C12" stroke="#333" stroke-width="1.5"/>
+    <rect x="88" y="156" width="40" height="44" rx="14" fill="#C68B59"/>
+    <rect x="172" y="156" width="40" height="44" rx="14" fill="#C68B59"/>
+    <ellipse cx="115" cy="88" rx="22" ry="16" fill="#A0694A" opacity="0.5"/>
+    <ellipse cx="192" cy="74" rx="16" ry="20" fill="#A0694A" opacity="0.5"/>
+    <ellipse cx="150" cy="100" rx="78" ry="86" fill="none" stroke="#333" stroke-width="2.5"/>
+    <rect x="88" y="156" width="40" height="44" rx="14" fill="none" stroke="#333" stroke-width="2"/>
+    <rect x="172" y="156" width="40" height="44" rx="14" fill="none" stroke="#333" stroke-width="2"/>
+  `),
+
+  // 2 ── ALIEN body
+  svg('#F0FFF2', `
+    <ellipse cx="150" cy="106" rx="78" ry="80" fill="#7BC47E"/>
+    <rect x="108" y="58" width="84" height="92" rx="15" fill="#5AA860"/>
+    <circle cx="130" cy="84" r="11" fill="#FFD700"/>
+    <circle cx="150" cy="84" r="11" fill="#FF6B6B"/>
+    <circle cx="170" cy="84" r="11" fill="#4FC3F7"/>
+    <rect x="120" y="106" width="60" height="28" rx="6" fill="#2D6B2F"/>
+    <rect x="125" y="111" width="50" height="18" rx="4" fill="#00E676"/>
+    <ellipse cx="58" cy="88" rx="22" ry="44" fill="#7BC47E" transform="rotate(-10,58,88)"/>
+    <ellipse cx="242" cy="88" rx="22" ry="44" fill="#7BC47E" transform="rotate(10,242,88)"/>
+    <circle cx="44" cy="128" r="11" fill="#7BC47E"/>
+    <circle cx="60" cy="136" r="11" fill="#7BC47E"/>
+    <circle cx="76" cy="128" r="11" fill="#7BC47E"/>
+    <circle cx="224" cy="128" r="11" fill="#7BC47E"/>
+    <circle cx="240" cy="136" r="11" fill="#7BC47E"/>
+    <circle cx="256" cy="128" r="11" fill="#7BC47E"/>
+    <rect x="84" y="156" width="132" height="20" rx="6" fill="#3D8B40" stroke="#333" stroke-width="2"/>
+    <rect x="137" y="152" width="26" height="28" rx="5" fill="#FFD700" stroke="#333" stroke-width="2"/>
+    <ellipse cx="150" cy="106" rx="78" ry="80" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+
+  // 3 ── ROBOT body
+  svg('#EEF2F5', `
+    <rect x="58" y="18" width="184" height="168" rx="14" fill="#BDC3C7"/>
+    <rect x="78" y="38" width="144" height="108" rx="10" fill="#95A5A6"/>
+    <circle cx="150" cy="76" r="31" fill="#1ABC9C"/>
+    <circle cx="150" cy="76" r="22" fill="#16A085"/>
+    <circle cx="150" cy="76" r="14" fill="#1ABC9C"/>
+    <polygon points="155,61 143,79 152,79 145,94 157,73 148,73" fill="#FFD700"/>
+    <circle cx="93" cy="130" r="11" fill="#E74C3C"/>
+    <circle cx="118" cy="130" r="11" fill="#F39C12"/>
+    <circle cx="143" cy="130" r="11" fill="#2ECC71"/>
+    <circle cx="168" cy="130" r="11" fill="#3498DB"/>
+    <circle cx="193" cy="130" r="11" fill="#9B59B6"/>
+    <circle cx="50" cy="54" r="20" fill="#95A5A6" stroke="#333" stroke-width="2"/>
+    <circle cx="250" cy="54" r="20" fill="#95A5A6" stroke="#333" stroke-width="2"/>
+    <rect x="26" y="64" width="30" height="100" rx="12" fill="#BDC3C7" stroke="#333" stroke-width="2"/>
+    <rect x="244" y="64" width="30" height="100" rx="12" fill="#BDC3C7" stroke="#333" stroke-width="2"/>
+    <rect x="58" y="18" width="184" height="168" rx="14" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+
+  // 4 ── FROG body
+  svg('#F0FFF0', `
+    <ellipse cx="150" cy="108" rx="98" ry="84" fill="#4CAF50"/>
+    <ellipse cx="150" cy="118" rx="68" ry="64" fill="#81C784"/>
+    <circle cx="95" cy="64" r="18" fill="#388E3C" opacity="0.55"/>
+    <circle cx="202" cy="68" r="14" fill="#388E3C" opacity="0.55"/>
+    <ellipse cx="42" cy="88" rx="22" ry="38" fill="#4CAF50" transform="rotate(15,42,88)"/>
+    <ellipse cx="258" cy="88" rx="22" ry="38" fill="#4CAF50" transform="rotate(-15,258,88)"/>
+    <ellipse cx="29" cy="124" rx="13" ry="9" fill="#4CAF50" transform="rotate(-30,29,124)"/>
+    <ellipse cx="42" cy="132" rx="13" ry="9" fill="#4CAF50"/>
+    <ellipse cx="55" cy="124" rx="13" ry="9" fill="#4CAF50" transform="rotate(30,55,124)"/>
+    <ellipse cx="245" cy="124" rx="13" ry="9" fill="#4CAF50" transform="rotate(30,245,124)"/>
+    <ellipse cx="258" cy="132" rx="13" ry="9" fill="#4CAF50"/>
+    <ellipse cx="271" cy="124" rx="13" ry="9" fill="#4CAF50" transform="rotate(-30,271,124)"/>
+    <circle cx="150" cy="124" r="6" fill="#66BB6A"/>
+    <ellipse cx="150" cy="108" rx="98" ry="84" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="42" cy="88" rx="22" ry="38" fill="none" stroke="#333" stroke-width="2" transform="rotate(15,42,88)"/>
+    <ellipse cx="258" cy="88" rx="22" ry="38" fill="none" stroke="#333" stroke-width="2" transform="rotate(-15,258,88)"/>
+  `),
+
+  // 5 ── MONSTER body
+  svg('#FFF0F0', `
+    <ellipse cx="150" cy="100" rx="98" ry="88" fill="#E74C3C"/>
+    <ellipse cx="150" cy="112" rx="64" ry="68" fill="#C0392B"/>
+    <path d="M96,88 Q150,82 204,88" stroke="#A93226" stroke-width="5" fill="none"/>
+    <path d="M90,108 Q150,102 210,108" stroke="#A93226" stroke-width="5" fill="none"/>
+    <path d="M96,128 Q150,122 204,128" stroke="#A93226" stroke-width="5" fill="none"/>
+    <ellipse cx="36" cy="84" rx="32" ry="58" fill="#E74C3C"/>
+    <ellipse cx="264" cy="84" rx="32" ry="58" fill="#E74C3C"/>
+    <path d="M13,122 L6,102 L16,118 M18,128 L12,108 L22,124 M28,132 L22,112 L32,128" stroke="#B03A2E" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M287,122 L294,102 L284,118 M282,128 L288,108 L278,124 M272,132 L278,112 L268,128" stroke="#B03A2E" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <polygon points="87,18 79,-2 97,14" fill="#A93226"/>
+    <polygon points="110,10 104,-8 120,8" fill="#A93226"/>
+    <polygon points="136,6 132,-10 144,6" fill="#A93226"/>
+    <ellipse cx="150" cy="100" rx="98" ry="88" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="36" cy="84" rx="32" ry="58" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="264" cy="84" rx="32" ry="58" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+];
+
+// =============================================================================
+// FEET  (6 characters)
+// =============================================================================
+const feet = [
+
+  // 0 ── CAT feet
+  svg('#FAFAFA', `
+    <rect x="80" y="0" width="44" height="118" rx="18" fill="#FF8C42"/>
+    <rect x="176" y="0" width="44" height="118" rx="18" fill="#FF8C42"/>
+    <ellipse cx="102" cy="132" rx="38" ry="26" fill="#FF8C42"/>
+    <ellipse cx="198" cy="132" rx="38" ry="26" fill="#FF8C42"/>
+    <circle cx="82" cy="140" r="10" fill="#FF9A5C"/>
+    <circle cx="102" cy="146" r="10" fill="#FF9A5C"/>
+    <circle cx="122" cy="140" r="10" fill="#FF9A5C"/>
+    <circle cx="178" cy="140" r="10" fill="#FF9A5C"/>
+    <circle cx="198" cy="146" r="10" fill="#FF9A5C"/>
+    <circle cx="218" cy="140" r="10" fill="#FF9A5C"/>
+    <line x1="82" y1="150" x2="78" y2="164" stroke="#CC6B28" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="102" y1="156" x2="102" y2="170" stroke="#CC6B28" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="122" y1="150" x2="126" y2="164" stroke="#CC6B28" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="178" y1="150" x2="174" y2="164" stroke="#CC6B28" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="198" y1="156" x2="198" y2="170" stroke="#CC6B28" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="218" y1="150" x2="222" y2="164" stroke="#CC6B28" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="150" cy="186" rx="118" ry="10" fill="rgba(0,0,0,0.07)"/>
+    <rect x="80" y="0" width="44" height="118" rx="18" fill="none" stroke="#333" stroke-width="2.5"/>
+    <rect x="176" y="0" width="44" height="118" rx="18" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="102" cy="132" rx="38" ry="26" fill="none" stroke="#333" stroke-width="2"/>
+    <ellipse cx="198" cy="132" rx="38" ry="26" fill="none" stroke="#333" stroke-width="2"/>
+  `),
+
+  // 1 ── DOG feet
+  svg('#FAFAFA', `
+    <rect x="74" y="0" width="50" height="108" rx="20" fill="#C68B59"/>
+    <rect x="176" y="0" width="50" height="108" rx="20" fill="#C68B59"/>
+    <ellipse cx="99" cy="128" rx="42" ry="30" fill="#C68B59"/>
+    <ellipse cx="201" cy="128" rx="42" ry="30" fill="#C68B59"/>
+    <circle cx="76" cy="116" r="14" fill="#C68B59"/>
+    <circle cx="99" cy="110" r="14" fill="#C68B59"/>
+    <circle cx="122" cy="116" r="14" fill="#C68B59"/>
+    <circle cx="178" cy="116" r="14" fill="#C68B59"/>
+    <circle cx="201" cy="110" r="14" fill="#C68B59"/>
+    <circle cx="224" cy="116" r="14" fill="#C68B59"/>
+    <ellipse cx="99" cy="136" rx="28" ry="19" fill="#A0694A"/>
+    <ellipse cx="201" cy="136" rx="28" ry="19" fill="#A0694A"/>
+    <circle cx="76" cy="118" r="8" fill="#A0694A"/>
+    <circle cx="99" cy="112" r="8" fill="#A0694A"/>
+    <circle cx="122" cy="118" r="8" fill="#A0694A"/>
+    <circle cx="178" cy="118" r="8" fill="#A0694A"/>
+    <circle cx="201" cy="112" r="8" fill="#A0694A"/>
+    <circle cx="224" cy="118" r="8" fill="#A0694A"/>
+    <ellipse cx="150" cy="186" rx="118" ry="10" fill="rgba(0,0,0,0.07)"/>
+    <rect x="74" y="0" width="50" height="108" rx="20" fill="none" stroke="#333" stroke-width="2.5"/>
+    <rect x="176" y="0" width="50" height="108" rx="20" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="99" cy="128" rx="42" ry="30" fill="none" stroke="#333" stroke-width="2"/>
+    <ellipse cx="201" cy="128" rx="42" ry="30" fill="none" stroke="#333" stroke-width="2"/>
+  `),
+
+  // 2 ── ALIEN feet
+  svg('#FAFAFA', `
+    <rect x="89" y="0" width="28" height="108" rx="12" fill="#7BC47E"/>
+    <rect x="183" y="0" width="28" height="108" rx="12" fill="#7BC47E"/>
+    <ellipse cx="90" cy="132" rx="54" ry="28" fill="#7BC47E"/>
+    <ellipse cx="210" cy="132" rx="54" ry="28" fill="#7BC47E"/>
+    <ellipse cx="48" cy="152" rx="16" ry="12" fill="#7BC47E" transform="rotate(-22,48,152)"/>
+    <ellipse cx="90" cy="160" rx="16" ry="12" fill="#7BC47E"/>
+    <ellipse cx="132" cy="152" rx="16" ry="12" fill="#7BC47E" transform="rotate(22,132,152)"/>
+    <ellipse cx="168" cy="152" rx="16" ry="12" fill="#7BC47E" transform="rotate(-22,168,152)"/>
+    <ellipse cx="210" cy="160" rx="16" ry="12" fill="#7BC47E"/>
+    <ellipse cx="252" cy="152" rx="16" ry="12" fill="#7BC47E" transform="rotate(22,252,152)"/>
+    <circle cx="48" cy="152" r="5" fill="#5AA860"/>
+    <circle cx="90" cy="160" r="5" fill="#5AA860"/>
+    <circle cx="132" cy="152" r="5" fill="#5AA860"/>
+    <circle cx="168" cy="152" r="5" fill="#5AA860"/>
+    <circle cx="210" cy="160" r="5" fill="#5AA860"/>
+    <circle cx="252" cy="152" r="5" fill="#5AA860"/>
+    <circle cx="103" cy="54" r="18" fill="#5AA860" stroke="#333" stroke-width="2"/>
+    <circle cx="197" cy="54" r="18" fill="#5AA860" stroke="#333" stroke-width="2"/>
+    <ellipse cx="90" cy="132" rx="54" ry="28" fill="none" stroke="#333" stroke-width="2"/>
+    <ellipse cx="210" cy="132" rx="54" ry="28" fill="none" stroke="#333" stroke-width="2"/>
+  `),
+
+  // 3 ── ROBOT feet
+  svg('#FAFAFA', `
+    <rect x="83" y="0" width="44" height="98" rx="8" fill="#BDC3C7"/>
+    <rect x="173" y="0" width="44" height="98" rx="8" fill="#BDC3C7"/>
+    <rect x="88" y="38" width="34" height="24" rx="5" fill="#95A5A6" stroke="#666" stroke-width="1.5"/>
+    <rect x="178" y="38" width="34" height="24" rx="5" fill="#95A5A6" stroke="#666" stroke-width="1.5"/>
+    <rect x="54" y="98" width="102" height="52" rx="10" fill="#95A5A6"/>
+    <rect x="144" y="98" width="102" height="52" rx="10" fill="#95A5A6"/>
+    <circle cx="68" cy="150" r="12" fill="#7F8C8D" stroke="#555" stroke-width="1.5"/>
+    <circle cx="105" cy="150" r="12" fill="#7F8C8D" stroke="#555" stroke-width="1.5"/>
+    <circle cx="142" cy="150" r="12" fill="#7F8C8D" stroke="#555" stroke-width="1.5"/>
+    <circle cx="158" cy="150" r="12" fill="#7F8C8D" stroke="#555" stroke-width="1.5"/>
+    <circle cx="195" cy="150" r="12" fill="#7F8C8D" stroke="#555" stroke-width="1.5"/>
+    <circle cx="232" cy="150" r="12" fill="#7F8C8D" stroke="#555" stroke-width="1.5"/>
+    <circle cx="68" cy="150" r="7" fill="#E74C3C"/>
+    <circle cx="105" cy="150" r="7" fill="#FF8C00"/>
+    <circle cx="142" cy="150" r="7" fill="#FFD700"/>
+    <circle cx="158" cy="150" r="7" fill="#E74C3C"/>
+    <circle cx="195" cy="150" r="7" fill="#FF8C00"/>
+    <circle cx="232" cy="150" r="7" fill="#FFD700"/>
+    <ellipse cx="105" cy="170" rx="8" ry="16" fill="#FF8C00" opacity="0.65"/>
+    <ellipse cx="195" cy="170" rx="8" ry="16" fill="#FF8C00" opacity="0.65"/>
+    <rect x="83" y="0" width="44" height="98" rx="8" fill="none" stroke="#333" stroke-width="2.5"/>
+    <rect x="173" y="0" width="44" height="98" rx="8" fill="none" stroke="#333" stroke-width="2.5"/>
+    <rect x="54" y="98" width="102" height="52" rx="10" fill="none" stroke="#333" stroke-width="2.5"/>
+    <rect x="144" y="98" width="102" height="52" rx="10" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+
+  // 4 ── FROG feet
+  svg('#FAFAFA', `
+    <path d="M104,0 L84,68 L54,98 L74,118 L104,93 L120,118" fill="#4CAF50" stroke="#333" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M196,0 L216,68 L246,98 L226,118 L196,93 L180,118" fill="#4CAF50" stroke="#333" stroke-width="2.5" stroke-linejoin="round"/>
+    <ellipse cx="90" cy="143" rx="50" ry="26" fill="#4CAF50" transform="rotate(-12,90,143)"/>
+    <path d="M48,133 Q70,156 90,146 Q110,156 132,138" fill="#66BB6A"/>
+    <ellipse cx="50" cy="130" rx="14" ry="10" fill="#4CAF50" transform="rotate(-28,50,130)"/>
+    <ellipse cx="76" cy="153" rx="14" ry="10" fill="#4CAF50"/>
+    <ellipse cx="102" cy="156" rx="14" ry="10" fill="#4CAF50"/>
+    <ellipse cx="126" cy="146" rx="14" ry="10" fill="#4CAF50" transform="rotate(22,126,146)"/>
+    <circle cx="50" cy="130" r="4" fill="#388E3C"/>
+    <circle cx="76" cy="153" r="4" fill="#388E3C"/>
+    <circle cx="102" cy="156" r="4" fill="#388E3C"/>
+    <circle cx="126" cy="146" r="4" fill="#388E3C"/>
+    <ellipse cx="210" cy="143" rx="50" ry="26" fill="#4CAF50" transform="rotate(12,210,143)"/>
+    <path d="M252,133 Q230,156 210,146 Q190,156 168,138" fill="#66BB6A"/>
+    <ellipse cx="250" cy="130" rx="14" ry="10" fill="#4CAF50" transform="rotate(28,250,130)"/>
+    <ellipse cx="224" cy="153" rx="14" ry="10" fill="#4CAF50"/>
+    <ellipse cx="198" cy="156" rx="14" ry="10" fill="#4CAF50"/>
+    <ellipse cx="174" cy="146" rx="14" ry="10" fill="#4CAF50" transform="rotate(-22,174,146)"/>
+    <circle cx="250" cy="130" r="4" fill="#388E3C"/>
+    <circle cx="224" cy="153" r="4" fill="#388E3C"/>
+    <circle cx="198" cy="156" r="4" fill="#388E3C"/>
+    <circle cx="174" cy="146" r="4" fill="#388E3C"/>
+  `),
+
+  // 5 ── MONSTER feet
+  svg('#FAFAFA', `
+    <rect x="64" y="0" width="64" height="108" rx="20" fill="#E74C3C"/>
+    <rect x="172" y="0" width="64" height="108" rx="20" fill="#E74C3C"/>
+    <ellipse cx="96" cy="136" rx="64" ry="36" fill="#E74C3C"/>
+    <ellipse cx="204" cy="136" rx="64" ry="36" fill="#E74C3C"/>
+    <path d="M38,145 L26,175 L48,153" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M62,156 L52,186 L72,162" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M88,161 L82,192 L100,166" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M114,160 L112,192 L128,166" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M140,156 L140,188 L154,162" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M160,156 L148,188 L162,162" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M186,160 L182,192 L198,166" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M212,161 L210,192 L226,166" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M238,156 L236,188 L250,162" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M262,145 L274,175 L252,153" fill="#C0392B" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="80" cy="132" r="9" fill="#C0392B"/>
+    <circle cx="112" cy="144" r="7" fill="#C0392B"/>
+    <circle cx="96" cy="152" r="6" fill="#C0392B"/>
+    <circle cx="192" cy="132" r="9" fill="#C0392B"/>
+    <circle cx="220" cy="144" r="7" fill="#C0392B"/>
+    <circle cx="204" cy="152" r="6" fill="#C0392B"/>
+    <rect x="64" y="0" width="64" height="108" rx="20" fill="none" stroke="#333" stroke-width="2.5"/>
+    <rect x="172" y="0" width="64" height="108" rx="20" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="96" cy="136" rx="64" ry="36" fill="none" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="204" cy="136" rx="64" ry="36" fill="none" stroke="#333" stroke-width="2.5"/>
+  `),
+];
+
+// =============================================================================
+// APP STATE & LOGIC
+// =============================================================================
+const state = { head: 0, body: 0, feet: 0 };
+
+const parts = { head: heads, body: bodies, feet: feet };
+
+function render(section) {
+  document.getElementById(section + '-inner').innerHTML = parts[section][state[section]];
+  const n = parts[section].length;
+  document.getElementById(section + '-counter').textContent = `${state[section] + 1} / ${n}`;
+}
+
+function flip(section, dir) {
+  const n = parts[section].length;
+  const inner = document.getElementById(section + '-inner');
+
+  // Trigger animation
+  inner.classList.remove('flipping');
+  void inner.offsetWidth; // force reflow to restart animation
+  inner.classList.add('flipping');
+
+  // Swap content at the halfway point (content appears to flip in)
+  setTimeout(() => {
+    state[section] = ((state[section] + dir) + n) % n;
+    render(section);
+  }, 175);
+
+  setTimeout(() => inner.classList.remove('flipping'), 360);
+}
+
+function randomize() {
+  ['head', 'body', 'feet'].forEach(s => {
+    state[s] = Math.floor(Math.random() * parts[s].length);
+    render(s);
+  });
+  showName();
+}
+
+// ── Creature name generator ──
+const adj1   = ['Fuzzy','Slimy','Bumpy','Wobbly','Spiky','Grumpy','Giggly','Stinky','Wriggly','Flappy','Soggy','Crunchy'];
+const adj2   = ['Noggin','Tummy','Toes','Belly','Snout','Chomper','Wiggle','Squirm','Grumble','Wobble','Jiggles','Blobkins'];
+const suffix = ['the Mighty','of the Deep','the Ridiculous','the Confused','McSillypants','the Unstoppable','Jr.','the First','3000','the Brave','of Doom','the Smelly'];
+
+function showName() {
+  const display = document.getElementById('name-display');
+  display.style.opacity = '0';
+  setTimeout(() => {
+    const a = adj1[Math.floor(Math.random() * adj1.length)];
+    const b = adj2[Math.floor(Math.random() * adj2.length)];
+    const c = suffix[Math.floor(Math.random() * suffix.length)];
+    display.textContent = `${a} ${b} ${c}`;
+    display.style.opacity = '1';
+  }, 150);
+}
+
+// ── Touch / swipe support ──
+let touchStart = {};
+document.querySelectorAll('.section').forEach((el, i) => {
+  const sectionName = ['head', 'body', 'feet'][i];
+  el.addEventListener('touchstart', e => { touchStart[sectionName] = e.touches[0].clientX; }, { passive: true });
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - (touchStart[sectionName] || 0);
+    if (Math.abs(dx) > 40) flip(sectionName, dx < 0 ? 1 : -1);
+  });
+});
+
+// ── Keyboard support ──
+document.addEventListener('keydown', e => {
+  switch (e.key) {
+    case 'q': case 'Q': flip('head', -1); break;
+    case 'e': case 'E': flip('head',  1); break;
+    case 'a': case 'A': flip('body', -1); break;
+    case 'd': case 'D': flip('body',  1); break;
+    case 'z': case 'Z': flip('feet', -1); break;
+    case 'c': case 'C': flip('feet',  1); break;
+    case 'r': case 'R': randomize();      break;
+    case 'n': case 'N': showName();       break;
+  }
+});
+
+// ── Init ──
+window.onload = () => { render('head'); render('body'); render('feet'); };
+</script>
+</body>
+</html>
